@@ -6,12 +6,28 @@ struct MoonlightLocationGuardApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            VStack(alignment: .leading, spacing: 16) {
-                // Header — feature toggle
-                Toggle("Disable Location Services while streaming", isOn: Binding(
-                    get: { guardian.enabled }, set: { guardian.enabled = $0 }))
-                .toggleStyle(.switch)
-                .font(.system(size: 12, weight: .medium))
+            VStack(alignment: .leading, spacing: 14) {
+                // Master toggle
+                Toggle("Disable Location Services while streaming", isOn: $guardian.enabled)
+                    .toggleStyle(.switch)
+                    .font(.system(size: 12, weight: .medium))
+
+                Divider()
+
+                // Per-app toggles
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Watch for streaming:").font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    ForEach(guardian.targets) { target in
+                        Toggle(target.displayName, isOn: Binding(
+                            get: { guardian.isTargetEnabled(target.bundleID) },
+                            set: { guardian.setTargetEnabled(target.bundleID, enabled: $0) }
+                        ))
+                        .font(.system(size: 11))
+                        .toggleStyle(.switch)
+                    }
+                }
 
                 Divider()
 
@@ -21,7 +37,7 @@ struct MoonlightLocationGuardApp: App {
                         .resizable()
                         .frame(width: 16, height: 16)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(guardian.streaming ? "Moonlight streaming" : "Moonlight not streaming")
+                        Text(guardian.streamingApp.map { "Streaming: \($0)" } ?? "Not streaming")
                             .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(guardian.streaming ? .primary : .secondary)
                         Text(guardian.status)
@@ -32,7 +48,7 @@ struct MoonlightLocationGuardApp: App {
 
                 Divider()
 
-                // Last toggled (subtle)
+                // Last toggled
                 HStack(spacing: 6) {
                     Image(systemName: "clock")
                         .font(.system(size: 9))

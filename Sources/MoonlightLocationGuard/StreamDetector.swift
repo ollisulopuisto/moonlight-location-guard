@@ -1,57 +1,79 @@
 import AppKit
 import CoreGraphics
 
-/// Detects when Moonlight is streaming fullscreen.
-///
-/// We can't hook Moonlight directly, so we treat a fullscreen Moonlight window
-/// as "streaming". Several bundle IDs are tried because the App Store and
-/// direct-download builds may differ, and the fullscreen check is lenient
-/// (window covers most of the screen) rather than pixel-exact.
+/// Detects when any of the given apps is running fullscreen (proxy for "streaming").
 enum StreamDetector {
-    static let bundleIDs = [
-        "com.moonlight-stream.Moonlight",
-        "com.moonlight.Moonlight",
-        "com.moonlightstream.Moonlight",
+    /// Known streaming/gaming apps we can watch.
+    static let knownTargets: [Target] = [
+        Target(bundleID: "com.moonlight-stream.Moonlight", displayName: "Moonlight"),
+        Target(bundleID: "com.valvesoftware.steamlink", displayName: "Steam Link"),
+        Target(bundleID: "com.parsecgame.parsec", displayName: "Parsec"),
     ]
 
-    static func isStreamingFullscreen() -> Bool {
-        var candidates: [NSRunningApplication] = []
-        for bid in bundleIDs {
-            candidates.append(contentsOf: NSRunningApplication.runningApplications(withBundleIdentifier: bid))
-        }
-        let pids = Set(candidates.map(\.processIdentifier))
+    struct Target: Identifiable, Hashable {
+        var id: String { bundleID }
+        let bundleID: String
+        let displayName: String
+    }
 
-        guard !pids.isEmpty else {
-            return false
-        }
+    static func isStreamingFullscreen(for bundleIDs: [String]) -> Bool {
+        guard !bundleIDs.isEmpty else { return false }
+
+        let pids = Set(bundleIDs.flatMap {
+            NSRunningApplication.runningApplications(withBundleIdentifier: $0).map(\.processIdentifier)
+        })
+        guard !pids.isEmpty else { return false }
 
         guard let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID)
-            as? [[String: Any]] else {
-            return false
-        }
+            as? [[String: Any]] else { return false }
 
         let screens = NSScreen.screens.map(\.frame)
-        var best: (pid: pid_t, cover: Double)?
-        var moonWindows = 0
+        var bestCover: Double = 0
 
         for w in list {
-            guard let pid = w[kCGWindowOwnerPID as String] as? pid_t, pids.contains(pid) else { continue }
-            moonWindows += 1
-            guard let b = w[kCGWindowBounds as String] as? [String: CGFloat],
+            guard let pid = w[kCGWindowOwnerPID as String] as? pid_t, pids.contains(pid),
+                  let b = w[kCGWindowBounds as String] as? [String: CGFloat],
                   let width = b["Width"], let height = b["Height"] else { continue }
             let winRect = CGRect(x: b["X"] ?? 0, y: b["Y"] ?? 0, width: width, height: height)
-
-            // How much of this window is covered by any single screen?
             let cover = screens.map { screen in
                 let inter = winRect.intersection(screen)
-                let interArea = max(inter.width, 0) * max(inter.height, 0)
-                return interArea / (width * height)
+                return max(inter.width, 0) * max(inter.height, 0) / (width * height)
             }.max() ?? 0
-
-            if best == nil || cover > best!.cover { best = (pid, cover) }
+            if cover > bestCover { bestCover = cover }
         }
 
-        // Consider it streaming if a Moonlight window covers most of a screen.
-        return best.map { $0.cover > 0.85 } ?? false
+        return bestCover > 0.85
+    }
+
+    /// Returns the name of the app currently streaming fullscreen, or nil.
+    static func streamingAppName(for bundleIDs: [String]) -> String? {
+        let pids = Set(bundleIDs.flatMap {
+            NSRunningApplication.runningApplications(withBundleIdentifier: $0).map(\.processIdentifier)
+        })
+        guard !pids.isEmpty else { return nil }
+
+        guard let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID)
+            as? [[String: Any]] else { return nil }
+
+        let screens = NSScreen.screens.map(\.frame)
+        var best: (cover: Double, name: String)?
+
+        for target in knownTargets where bundleIDs.contains(target.bundleID) {
+            for w in list {
+                guard let pid = w[kCGWindowOwnerPID as String] as? pid_t, pids.contains(pid),
+                      let b = w[kCGWindowBounds as String] as? [String: CGFloat],
+                      let width = b["Width"], let height = b["Height"] else { continue }
+                let winRect = CGRect(x: b["X"] ?? 0, y: b["Y"] ?? 0, width: width, height: height)
+                let cover = screens.map { screen in
+                    let inter = winRect.intersection(screen)
+                    return max(inter.width, 0) * max(inter.height, 0) / (width * height)
+                }.max() ?? 0
+                if cover > 0.85 && (best == nil || cover > best!.cover) {
+                    best = (cover, target.displayName)
+                }
+            }
+        }
+
+        return best?.name
     }
 }
