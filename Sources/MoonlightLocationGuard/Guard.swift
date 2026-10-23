@@ -35,6 +35,9 @@ final class Guard: ObservableObject {
 
     func tick() {
         let now = StreamDetector.isStreamingFullscreen()
+        if now != streaming {
+            log(now ? "Moonlight streaming detected" : "Moonlight stopped streaming")
+        }
         defer { streaming = now }
         guard LocationServices.helperInstalled else { return }
         if enabled && now && !weDisabled {
