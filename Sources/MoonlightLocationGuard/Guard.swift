@@ -8,7 +8,6 @@ final class Guard: ObservableObject {
     @AppStorage("weDisabled") private var weDisabled = false
     @Published var streaming = false
     @Published var status = "Idle"
-    @Published var showDebugLog = false
     @Published var logEntries: [LogEntry] = []
     @Published var lastToggled: Date?
     private let df: DateFormatter = {
