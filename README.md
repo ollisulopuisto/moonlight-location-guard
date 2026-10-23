@@ -31,6 +31,14 @@ Because toggling Location Services requires root, a small root helper (`mlg-loca
 open dist/Moonlight\ Location\ Guard.app
 ```
 
+## Menu bar icon
+
+A custom gaming-style shield icon in the menu bar:
+- **Inactive:** blue outline — Location Services is on / not streaming.
+- **Active:** red filled — Location Services is off because Moonlight is streaming fullscreen.
+
+There's also a **Show debug log** button in the menu that lists when the app turned Location Services off/on, with timestamps.
+
 ## License
 
 MIT
