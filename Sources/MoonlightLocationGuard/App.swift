@@ -11,10 +11,8 @@ struct MoonlightLocationGuardApp: App {
                     get: { guardian.enabled }, set: { guardian.enabled = $0 }))
                 Text(guardian.streaming ? "Moonlight fullscreen" : "Moonlight not streaming")
                     .font(.system(size: 11)).foregroundStyle(.secondary)
-                if !guardian.streaming {
-                    Text(StreamDetector.lastDebug)
-                        .font(.system(size: 10)).foregroundStyle(.tertiary)
-                }
+                Text("Last toggled: \(guardian.lastToggledString)")
+                    .font(.system(size: 10)).foregroundStyle(.tertiary)
                 Text(guardian.status).font(.system(size: 11))
                 Divider()
                 Button(guardian.showDebugLog ? "Hide debug log" : "Show debug log") {

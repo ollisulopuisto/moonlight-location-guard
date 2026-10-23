@@ -10,6 +10,7 @@ final class Guard: ObservableObject {
     @Published var status = "Idle"
     @Published var showDebugLog = false
     @Published var logEntries: [LogEntry] = []
+    @Published var lastToggled: Date?
     private let df: DateFormatter = {
         let f = DateFormatter()
         f.timeStyle = .medium
@@ -46,6 +47,7 @@ final class Guard: ObservableObject {
             let r = LocationServices.run("off")
             if r.ok {
                 weDisabled = true
+                lastToggled = Date()
                 status = "Location Services off while streaming"
                 log("Location Services OFF (streaming started)")
             } else {
@@ -62,12 +64,21 @@ final class Guard: ObservableObject {
         let r = LocationServices.run("on")
         if r.ok {
             weDisabled = false
+            lastToggled = Date()
             status = "Location Services restored"
             log("Location Services ON (streaming stopped)")
         } else {
             status = "Restore failed: \(r.output)"
             log("Failed to restore Location Services: \(r.output)")
         }
+    }
+
+    var lastToggledString: String {
+        guard let d = lastToggled else { return "Never" }
+        let f = DateFormatter()
+        f.timeStyle = .short
+        f.dateStyle = .short
+        return f.string(from: d)
     }
 
     private func log(_ message: String) {

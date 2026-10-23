@@ -14,8 +14,6 @@ enum StreamDetector {
         "com.moonlightstream.Moonlight",
     ]
 
-    static var lastDebug: String = ""
-
     static func isStreamingFullscreen() -> Bool {
         var candidates: [NSRunningApplication] = []
         for bid in bundleIDs {
@@ -24,13 +22,11 @@ enum StreamDetector {
         let pids = Set(candidates.map(\.processIdentifier))
 
         guard !pids.isEmpty else {
-            lastDebug = "Moonlight process not running"
             return false
         }
 
         guard let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID)
             as? [[String: Any]] else {
-            lastDebug = "Could not read window list"
             return false
         }
 
@@ -54,8 +50,6 @@ enum StreamDetector {
 
             if best == nil || cover > best!.cover { best = (pid, cover) }
         }
-
-        lastDebug = "\(moonWindows) Moonlight window(s), best screen cover \(Int(best.map { $0.cover * 100 } ?? 0))%"
 
         // Consider it streaming if a Moonlight window covers most of a screen.
         return best.map { $0.cover > 0.85 } ?? false
