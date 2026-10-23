@@ -18,6 +18,8 @@ final class Guard: ObservableObject {
     @Published var streamingApp: String?
     @Published var status = "Idle"
     @Published var logEntries: [LogEntry] = []
+    /// Published so the per-app toggle row refreshes when a switch is flipped.
+    @Published private(set) var targetEnabledState: [String: Bool] = [:]
     private var timer: Timer?
 
     /// Bundle IDs the user has enabled for detection.
@@ -45,9 +47,16 @@ final class Guard: ObservableObject {
         var current = enabledBundleIDs
         if enabled { current.insert(bundleID) } else { current.remove(bundleID) }
         streamTargetsEnabledRaw = current.sorted().joined(separator: ",")
+        refreshTargetStates()
+    }
+
+    private func refreshTargetStates() {
+        targetEnabledState = Dictionary(uniqueKeysWithValues:
+            StreamDetector.knownTargets.map { ($0.bundleID, isTargetEnabled($0.bundleID)) })
     }
 
     init() {
+        refreshTargetStates()
         if !LocationServices.helperInstalled {
             status = "Helper not installed — run install-helper.sh"
         } else if weDisabled {

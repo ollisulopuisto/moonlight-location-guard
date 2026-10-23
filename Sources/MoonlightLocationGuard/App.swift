@@ -6,26 +6,35 @@ struct MoonlightLocationGuardApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 16) {
                 // Master toggle
-                Toggle("Disable Location Services while streaming", isOn: $guardian.enabled)
-                    .toggleStyle(.switch)
-                    .font(.system(size: 12, weight: .medium))
+                HStack(spacing: 10) {
+                    Text("Disable Location Services while streaming")
+                        .font(.system(size: 12, weight: .medium))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    Toggle("", isOn: $guardian.enabled)
+                        .toggleStyle(.switch)
+                }
 
                 Divider()
 
-                // Per-app toggles
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Watch for streaming:").font(.system(size: 10, weight: .semibold))
+                // Per-app toggles — labels left, controls right-aligned
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Watch for streaming:")
+                        .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
                     ForEach(guardian.targets) { target in
-                        Toggle(target.displayName, isOn: Binding(
-                            get: { guardian.isTargetEnabled(target.bundleID) },
-                            set: { guardian.setTargetEnabled(target.bundleID, enabled: $0) }
-                        ))
-                        .font(.system(size: 11))
-                        .toggleStyle(.switch)
+                        HStack(spacing: 10) {
+                            Text(target.displayName)
+                                .font(.system(size: 11))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            Toggle("", isOn: Binding(
+                                get: { guardian.targetEnabledState[target.bundleID] ?? false },
+                                set: { guardian.setTargetEnabled(target.bundleID, enabled: $0) }
+                            ))
+                            .toggleStyle(.switch)
+                        }
                     }
                 }
 
@@ -58,7 +67,7 @@ struct MoonlightLocationGuardApp: App {
                         .foregroundStyle(.tertiary)
                 }
 
-                Spacer(minLength: 8)
+                Spacer(minLength: 10)
 
                 Button("Quit") { NSApplication.shared.terminate(nil) }
                     .font(.system(size: 11, weight: .regular))
@@ -66,7 +75,7 @@ struct MoonlightLocationGuardApp: App {
                     .frame(maxWidth: .infinity, alignment: .center)
             }
             .padding(16)
-            .frame(width: 280)
+            .frame(width: 300)
         } label: {
             Image(nsImage: guardian.iconImage)
                 .contextMenu {
