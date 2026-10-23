@@ -1,13 +1,19 @@
 import SwiftUI
 
+/// The app's menu bar UI.
+///
+/// Moonlight Location Guard runs as an accessory (menu bar only, no dock icon).
+/// The window presents a master toggle, per-app streaming toggles, a status row,
+/// and the last-toggled timestamp. A context menu on the icon exposes the debug log.
 @main
 struct MoonlightLocationGuardApp: App {
+    /// Shared state object driving the UI.
     @StateObject private var guardian = Guard()
 
     var body: some Scene {
         MenuBarExtra {
             VStack(alignment: .leading, spacing: 16) {
-                // Master toggle
+                // Master toggle — enables/disables the whole feature.
                 HStack(spacing: 10) {
                     Text("Disable Location Services while streaming")
                         .font(.system(size: 12, weight: .medium))
@@ -19,7 +25,7 @@ struct MoonlightLocationGuardApp: App {
 
                 Divider()
 
-                // Per-app toggles — labels left, controls right-aligned
+                // Per-app toggles — labels left, controls right-aligned.
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Watch for streaming:")
                         .font(.system(size: 10, weight: .semibold))
@@ -40,7 +46,7 @@ struct MoonlightLocationGuardApp: App {
 
                 Divider()
 
-                // Status row
+                // Status row — icon + which app is streaming + current status.
                 HStack(spacing: 10) {
                     Image(nsImage: guardian.iconImage)
                         .resizable()
@@ -57,7 +63,7 @@ struct MoonlightLocationGuardApp: App {
 
                 Divider()
 
-                // Last toggled
+                // Last toggled — subtle timestamp of the most recent on/off event.
                 HStack(spacing: 6) {
                     Image(systemName: "clock")
                         .font(.system(size: 9))
@@ -77,6 +83,7 @@ struct MoonlightLocationGuardApp: App {
             .padding(16)
             .frame(width: 300)
         } label: {
+            // Menu bar icon with a right-click context menu showing the debug log.
             Image(nsImage: guardian.iconImage)
                 .contextMenu {
                     if guardian.logEntries.isEmpty {

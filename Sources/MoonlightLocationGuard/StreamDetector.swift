@@ -1,21 +1,30 @@
 import AppKit
 import CoreGraphics
 
-/// Detects when any of the given apps is running fullscreen (proxy for "streaming").
+/// Detects when a streaming/gaming app is running fullscreen.
+///
+/// macOS has no public API for "is this app streaming?", so we use fullscreen
+/// as a proxy: when Moonlight / Steam Link / Parsec has a window covering most
+/// of a screen, treat it as streaming. Location Services can then be disabled.
 enum StreamDetector {
-    /// Known streaming/gaming apps we can watch.
+    /// Known streaming/gaming apps we can watch, with their bundle IDs and display names.
     static let knownTargets: [Target] = [
         Target(bundleID: "com.moonlight-stream.Moonlight", displayName: "Moonlight"),
         Target(bundleID: "com.valvesoftware.steamlink", displayName: "Steam Link"),
         Target(bundleID: "com.parsecgame.parsec", displayName: "Parsec"),
     ]
 
+    /// A single detectable app target.
     struct Target: Identifiable, Hashable {
         var id: String { bundleID }
         let bundleID: String
         let displayName: String
     }
 
+    /// Returns true if any of the given bundle IDs has a window covering >85% of a screen.
+    ///
+    /// - Parameter bundleIDs: Bundle IDs to check (filtered to enabled targets by the caller).
+    /// - Returns: `true` when a matching app window is fullscreen.
     static func isStreamingFullscreen(for bundleIDs: [String]) -> Bool {
         guard !bundleIDs.isEmpty else { return false }
 
@@ -45,7 +54,10 @@ enum StreamDetector {
         return bestCover > 0.85
     }
 
-    /// Returns the name of the app currently streaming fullscreen, or nil.
+    /// Returns the display name of the app currently streaming fullscreen, or nil.
+    ///
+    /// - Parameter bundleIDs: Bundle IDs to consider.
+    /// - Returns: The `displayName` of the best-matching streaming app, or nil.
     static func streamingAppName(for bundleIDs: [String]) -> String? {
         let pids = Set(bundleIDs.flatMap {
             NSRunningApplication.runningApplications(withBundleIdentifier: $0).map(\.processIdentifier)

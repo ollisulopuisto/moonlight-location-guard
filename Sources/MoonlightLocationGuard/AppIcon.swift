@@ -1,13 +1,24 @@
 import AppKit
 
-/// Gaming-style menu-bar icon: a shield "guard" with pause-bar motif.
-/// Inactive = blue outline; active (streaming / location off) = red filled.
+/// Programmatically drawn gaming-style menu bar icon.
+///
+/// A shield "guard" with a pause-bar motif (two vertical bars like a pause symbol):
+/// - **Inactive:** blue outline shield — Location Services is on / not streaming.
+/// - **Active:** red filled shield with white bars — Location Services is off while streaming.
 enum AppIcon {
     static let size: CGFloat = 18
 
+    /// Blueprint outline icon shown when Location Services is on.
     static var inactive: NSImage { draw(filled: false, color: .systemBlue) }
+    /// Red filled icon shown when Location Services is off (streaming).
     static var active: NSImage  { draw(filled: true,  color: .systemRed) }
 
+    /// Draws the shield + pause-bar icon into an NSImage of the given size.
+    ///
+    /// - Parameters:
+    ///   - filled: When true, fills the shield with `color` and draws white bars.
+    ///             When false, strokes the shield outline and blue bars.
+    ///   - color:  The accent color (blue when inactive, red when active).
     private static func draw(filled: Bool, color: NSColor) -> NSImage {
         let image = NSImage(size: NSSize(width: size, height: size))
         image.lockFocus()

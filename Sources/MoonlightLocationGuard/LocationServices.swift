@@ -1,14 +1,23 @@
 import Foundation
 
-/// Toggles macOS Location Services through a root-owned helper that
-/// `install-helper.sh` whitelists in sudoers (passwordless, that one command only).
+/// Toggles macOS Location Services through a root-owned helper.
+///
+/// The helper (`/usr/local/libexec/mlg-location`) is installed once by
+/// `install-helper.sh` and whitelisted in sudoers so this app can run it
+/// passwordless via `sudo -n`. This enum wraps the `Process` calls.
 enum LocationServices {
+    /// Filesystem path to the root-owned helper installed by install-helper.sh.
     static let helper = "/usr/local/libexec/mlg-location"
 
+    /// Whether the helper executable exists and is runnable.
     static var helperInstalled: Bool {
         FileManager.default.isExecutableFile(atPath: helper)
     }
 
+    /// Runs the helper with the given argument (`on`, `off`, or `status`).
+    ///
+    /// - Parameter arg: One of `"on"`, `"off"`, `"status"`.
+    /// - Returns: A tuple `(ok: Bool, output: String)` indicating success and any output.
     @discardableResult
     static func run(_ arg: String) -> (ok: Bool, output: String) {
         let p = Process()
@@ -24,6 +33,9 @@ enum LocationServices {
         return (p.terminationStatus == 0, out)
     }
 
+    /// Reads the current Location Services state.
+    ///
+    /// - Returns: `true` if enabled, `false` if disabled, `nil` if the state cannot be read.
     /// nil when the state cannot be read.
     static func isEnabled() -> Bool? {
         let r = run("status")
