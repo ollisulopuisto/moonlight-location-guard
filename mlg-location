@@ -1,0 +1,16 @@
+#!/bin/bash
+# Root helper: mlg-location on|off|status. Installed root-owned by install-helper.sh.
+set -eu
+dir=/var/db/locationd/Library/Preferences/ByHost
+file=$(ls "$dir"/com.apple.locationd*.plist 2>/dev/null | head -1)
+[ -n "$file" ] || { echo "locationd plist not found" >&2; exit 1; }
+domain=${file%.plist}
+case "${1:-}" in
+  status) /usr/bin/sudo -u _locationd /usr/bin/defaults read "$domain" LocationServicesEnabled ;;
+  on|off)
+    v=1; [ "$1" = off ] && v=0
+    /usr/bin/sudo -u _locationd /usr/bin/defaults write "$domain" LocationServicesEnabled -int $v
+    /bin/launchctl kickstart -k system/com.apple.locationd
+    ;;
+  *) echo "usage: $0 on|off|status" >&2; exit 2 ;;
+esac
