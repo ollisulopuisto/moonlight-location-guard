@@ -20,6 +20,22 @@ struct MoonlightLocationGuardApp: App {
             .padding(14).frame(width: 300)
         } label: {
             Image(nsImage: guardian.iconImage)
+                .contextMenu {
+                    if guardian.logEntries.isEmpty {
+                        Text("No debug events yet")
+                            .font(.system(size: 10)).foregroundStyle(.secondary)
+                    } else {
+                        ForEach(guardian.logEntries.prefix(12)) { entry in
+                            Text("\(entry.timestamp)  \(entry.message)")
+                                .font(.system(size: 10, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        Divider()
+                        Button("Clear log") { guardian.logEntries.removeAll() }
+                            .font(.system(size: 10))
+                    }
+                }
         }
         .menuBarExtraStyle(.window)
     }
